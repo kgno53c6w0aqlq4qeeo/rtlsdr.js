@@ -31,7 +31,6 @@ const numberWithCommas = (x: number) => {
   }
 })();
 
-
 function App() {
   const [s, sampleRateInput] = useRange(1_000, 32_000, 8_000, 32_000, () => start());
   const [f, frequencyInput] = useRange(100_000, 96_000_000, 80_000_000, 100_000_000, () => start());
@@ -41,8 +40,6 @@ function App() {
 
   const frequency = parseInt(f as string);
   const sampleRate = parseInt(s as string);
-
-  let dev: USBDevice;
 
   // Radio and demodulation config
   const FREQUENCY: number = frequency; // Frequency in Hz, 91.1MHz WREK Atlanta
@@ -63,31 +60,31 @@ function App() {
   };
 
   /// Determine the optimal radio and demodulation configurations for given
-/// frequency and sample rate.
-const optimalSettings = (freq: number, rate: number) => {
-  let downsample = (1_000_000 / rate) + 1;
-  let capture_rate = downsample * rate;
+  /// frequency and sample rate.
+  const optimalSettings = (freq: number, rate: number) => {
+    let downsample = (1_000_000 / rate) + 1;
+    let capture_rate = downsample * rate;
 
-  // Use offset-tuning
-  let capture_freq = freq + capture_rate / 4;
-  let outputScale = (1 << 15) / (128 * downsample);
-  if (outputScale < 1) {
-    outputScale = 1;
-  }
-  return {
-    radioConfig: {
-      capture_freq,
-      capture_rate
-    },
-    demodConfig: {
-      rate_in: SAMPLE_RATE,
-          rate_out: SAMPLE_RATE,
-          rate_resample: RATE_RESAMPLE,
-          downsample: downsample,
-          output_scale: outputScale,
+    // Use offset-tuning
+    let capture_freq = freq + capture_rate / 4;
+    let outputScale = (1 << 15) / (128 * downsample);
+    if (outputScale < 1) {
+      outputScale = 1;
+    }
+    return {
+      radioConfig: {
+        capture_freq,
+        capture_rate
+      },
+      demodConfig: {
+        rate_in: SAMPLE_RATE,
+            rate_out: SAMPLE_RATE,
+            rate_resample: RATE_RESAMPLE,
+            downsample: downsample,
+            output_scale: outputScale,
+      }
     }
   }
-}
 
   const start = async () => {
       setStarted(true);
@@ -107,7 +104,7 @@ const optimalSettings = (freq: number, rate: number) => {
 
       await localDevice.reset();
 
-      const DEFAULT_BUF_LENGTH: number = (16 * 16384);
+      const DEFAULT_BUF_LENGTH: number = (16 * 16384) * 8;
 
       const { radioConfig, demodConfig } = optimalSettings(FREQUENCY, SAMPLE_RATE);
 
@@ -121,12 +118,12 @@ const optimalSettings = (freq: number, rate: number) => {
 
       console.log(`Bandwidth is ${rtlsdr.getTunerBandwidth()} Hz`)
 
-      console.log('Reading samples in sync mode...')
-
+      console.log('Reading samples in sync mode...');
+  
       while (true) {
-        const { data: { buffer } } = await rtlsdr.readSync(localDevice, DEFAULT_BUF_LENGTH * 4);
+        const { data: { buffer } } = await rtlsdr.readSync(localDevice, DEFAULT_BUF_LENGTH);
 
-        if (buffer.byteLength < DEFAULT_BUF_LENGTH * 4) {
+        if (buffer.byteLength < DEFAULT_BUF_LENGTH) {
           console.error({
             byteLength: buffer.byteLength
           });
@@ -136,23 +133,32 @@ const optimalSettings = (freq: number, rate: number) => {
         demod.postMessage([demodConfig, buffer]);
 
         demod.onmessage = (e) => {
+          
           const demodulated = e.data;
 
           audio.postMessage([demodulated, sampleRate]);
 
           audio.onmessage = (e) => {
-            const wavBytes = e.data;
-                      // show audio player
-            const audio = document.createElement("audio");
-
-            const blob = new Blob([wavBytes], { type: 'audio/wav' })
-            audio.src = URL.createObjectURL(blob)
-  
-            audio.play();
+            const wavBytes: Uint8Array = e.data;
+            drain(wavBytes);
           }
         }
-
       }
+  };
+
+  const drain = (buffer: Uint8Array) => {
+    let audioPlayer: HTMLMediaElement | null = document.getElementById('audio-player') as HTMLMediaElement;
+    if (!audioPlayer) {
+      audioPlayer = document.createElement("audio");
+      audioPlayer.setAttribute('id', 'audio-player');
+      document.body.appendChild(audioPlayer);
+    }
+    if (!buffer.length) {
+      return;
+    }
+    const blob = new Blob([buffer], { type: 'audio/wav' })
+    audioPlayer.src = URL.createObjectURL(blob);
+    audioPlayer.play();
   };
 
   const close = async () => {

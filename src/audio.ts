@@ -17,7 +17,7 @@ const play = async (buf: Int16Array, sampleRate: number) => {
       sampleRate: sampleRate,
       numChannels,
       format
-    }))
+    }));
 
     // create WAV file with header and downloaded PCM audio
     const wavBytes = new Uint8Array(wavHeader.length + newBuf.byteLength)

@@ -25,23 +25,22 @@ onmessage = ({data}) => postMessage(demodulate(data[0], data[1]));
 
 const demodulate = (config: any, buf: ArrayBuffer): Int16Array => {
     state.config = config;
-    let buffer = new Uint8Array(buf);
-    buffer = rotate90(buffer);
+    const buffer = rotate90(new Uint8Array(buf));
 
     const bufSigned = Array.from(buffer).map(i => i - 127);
 
     const complex = bufToComplex(bufSigned);    
 
     // low-pass filter to downsample to our desired sample rate
-    let lowpassed = lowPassComplex(complex);
+    const lowpassed = lowPassComplex(complex);
 
     // Demodulate FM signal
-    let demodulated = fmDemod(lowpassed);
+    const demodulated = fmDemod(lowpassed);
 
     // Resample and return result
-    let output = lowPassReal(demodulated);
+    const output = lowPassReal(demodulated);
 
-     return new Int16Array(output);
+    return new Int16Array(output);
 };
 
 /// Applies a low-pass filter to a vector of real-valued data
