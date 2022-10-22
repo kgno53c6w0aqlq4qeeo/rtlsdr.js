@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { e } from 'mathjs';
+import React, { useEffect, useState } from 'react';
 import './App.css';
 
 import rtlsdr from './rtlsdr/rtlsdr';
 import { TunerGain } from './rtlsdr/rtlsdr';
-import Plotly from 'plotly.js-dist-min'
 
 
 const demod = new Worker(new URL('./demod', import.meta.url));
@@ -33,12 +33,12 @@ const numberWithCommas = (x: number) => {
 })();
 
 
-let tuner: any, device: any = undefined;
-
 function App() {
   const [s, sampleRateInput] = useRange(1_000, 32_000, 8_000, 32_000, () => start());
   const [f, frequencyInput] = useRange(100_000, 96_000_000, 80_000_000, 100_000_000, () => start());
   const [started, setStarted] = useState(false);
+  const [device, setDevice] = useState<USBDevice | undefined>(undefined);
+  const [tuner, setTuner] = useState<any>(undefined);
 
   const frequency = parseInt(f as string);
   const sampleRate = parseInt(s as string);
@@ -92,21 +92,29 @@ const optimalSettings = (freq: number, rate: number) => {
 
   const start = async () => {
       setStarted(true);
+      let localDevice: USBDevice | undefined = device;
+      let localTuner: any = tuner;
       if (!device || !tuner) {
         const { tuner: t, device: d } = await rtlsdr.init({filters:[{vendorId: 3034}]});
-        tuner = t;
-        device = d;
+        setDevice(d);
+        setTuner(t);
+        localDevice = d;
+        localTuner = t;
       }
 
-      await device.reset();
+      if (!localDevice || !localTuner) {
+        throw new Error('cannot get device or tuner');
+      }
+
+      await localDevice.reset();
 
       const DEFAULT_BUF_LENGTH: number = (16 * 16384);
 
       const { radioConfig, demodConfig } = optimalSettings(FREQUENCY, SAMPLE_RATE);
 
-      await configure(device, tuner, radioConfig.capture_freq, radioConfig.capture_rate);
+      await configure(localDevice, localTuner, radioConfig.capture_freq, radioConfig.capture_rate);
 
-      dev = device;
+      // dev = device;
 
       console.log(`Sampling at ${rtlsdr.getSampleRate()} S/s`);
 
@@ -117,7 +125,7 @@ const optimalSettings = (freq: number, rate: number) => {
       console.log('Reading samples in sync mode...')
 
       while (true) {
-        const { data: { buffer } } = await rtlsdr.readSync(device, DEFAULT_BUF_LENGTH * 4);
+        const { data: { buffer } } = await rtlsdr.readSync(localDevice, DEFAULT_BUF_LENGTH * 4);
 
         if (buffer.byteLength < DEFAULT_BUF_LENGTH * 4) {
           console.error({
@@ -149,15 +157,13 @@ const optimalSettings = (freq: number, rate: number) => {
   };
 
   const close = async () => {
+    if (!device) {
+      return;
+    }
     setStarted(false);
-    await rtlsdr.close(dev);
+    await rtlsdr.close(device);
   };
 
-
-  const plotStyle = {
-    width:"600px", 
-    height: "250px;"
-  }
 
   return (
     <div className="App">
