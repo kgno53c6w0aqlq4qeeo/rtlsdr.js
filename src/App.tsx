@@ -1,5 +1,4 @@
-import { e } from 'mathjs';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import './App.css';
 
 import rtlsdr from './rtlsdr/rtlsdr';
@@ -161,6 +160,8 @@ const optimalSettings = (freq: number, rate: number) => {
       return;
     }
     setStarted(false);
+    setDevice(undefined);
+    setTuner(undefined);
     await rtlsdr.close(device);
   };
 
