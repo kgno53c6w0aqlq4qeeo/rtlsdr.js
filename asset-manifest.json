@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/rtlsdr.js/static/css/main.0ad3fe47.css",
-    "main.js": "/rtlsdr.js/static/js/main.ade9132a.js",
+    "main.js": "/rtlsdr.js/static/js/main.4c06379e.js",
     "static/js/524.9174fb88.chunk.js": "/rtlsdr.js/static/js/524.9174fb88.chunk.js",
     "static/js/945.0288da67.chunk.js": "/rtlsdr.js/static/js/945.0288da67.chunk.js",
     "static/js/787.b47e9e69.chunk.js": "/rtlsdr.js/static/js/787.b47e9e69.chunk.js",
     "static/js/543.59c0bba5.chunk.js": "/rtlsdr.js/static/js/543.59c0bba5.chunk.js",
     "index.html": "/rtlsdr.js/index.html",
     "main.0ad3fe47.css.map": "/rtlsdr.js/static/css/main.0ad3fe47.css.map",
-    "main.ade9132a.js.map": "/rtlsdr.js/static/js/main.ade9132a.js.map",
+    "main.4c06379e.js.map": "/rtlsdr.js/static/js/main.4c06379e.js.map",
     "524.9174fb88.chunk.js.map": "/rtlsdr.js/static/js/524.9174fb88.chunk.js.map",
     "945.0288da67.chunk.js.map": "/rtlsdr.js/static/js/945.0288da67.chunk.js.map",
     "787.b47e9e69.chunk.js.map": "/rtlsdr.js/static/js/787.b47e9e69.chunk.js.map",
@@ -16,6 +16,6 @@
   },
   "entrypoints": [
     "static/css/main.0ad3fe47.css",
-    "static/js/main.ade9132a.js"
+    "static/js/main.4c06379e.js"
   ]
 }
